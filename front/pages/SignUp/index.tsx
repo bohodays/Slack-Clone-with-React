@@ -2,8 +2,13 @@ import useInput from '@hooks/useInput';
 import React, { useCallback, useState } from 'react';
 import axios from 'axios';
 import { Form, Success, Error, Label, Input, LinkContainer, Button, Header } from './style';
+import { Link, Redirect } from 'react-router-dom';
+import useSWR from 'swr';
+import fetcher from '@utils/fetcher';
 
 const SingUp = () => {
+  const {data, error, mutate} = useSWR('http://localhost:3095/api/users', fetcher);
+
   // const [email, setEmail] = useState('');
   // const [nickname, setNickname] = useState('');
   const [email, onChangeEmail] = useInput('');                         // 커스텀 훅 적용
@@ -57,6 +62,15 @@ const SingUp = () => {
         .finally(() => {});
     }
   }, [email, nickname, password, passwordCheck, mismatchError]);       // deps에 함수 안에서 쓰이는 변수들을(state) 넣어주어야 값이 변한다. (함수 기준으로 외부 변수일때만)
+  
+  // return은 항상 hooks 아래에 있어야 한다! 주의!
+  if (data) {
+    return <Redirect to="/workspace/channel" />
+  }
+
+  if (data === undefined) {
+    return <div>로딩중...</div>;
+  }
 
   return (
     <div id="container">
@@ -100,7 +114,7 @@ const SingUp = () => {
       </Form>
       <LinkContainer>
         이미 회원이신가요?&nbsp;
-        {/* <Link to="/login">로그인 하러가기</Link> */}
+        <Link to="/login">로그인 하러가기</Link>     {/* 리액트에서 a링크는 새로고침되기 때문에 거의 사용하지 않고, 그 대신 Link라는 요소를 사용한다 */}
       </LinkContainer>
     </div>
   );
