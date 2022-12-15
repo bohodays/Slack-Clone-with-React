@@ -16,6 +16,10 @@ const Menu: FC<Props> = ({ children, style, show, onCloseModal, closeButton }) =
     e.stopPropagation();
   }, []);
 
+  if (!show) {
+    return null;
+  }
+
   return (
     // 부모 요소에 onCloseModal을 넣고 자식 요소에 stopPropagation을 넣은 것은 메뉴를 클릭하면 닫히지 않고 메뉴 이외의 영역을 클릭하면 메뉴를 닫히게 하기 위함이다.
     <CreateMenu onClick={onCloseModal}>

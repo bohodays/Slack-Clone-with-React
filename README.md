@@ -19,4 +19,3 @@ npm i react-toastify
 
 
 
-npm i react-toastify

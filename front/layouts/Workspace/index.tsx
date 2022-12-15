@@ -1,28 +1,39 @@
 import fetcher from '@utils/fetcher';
 import axios from 'axios';
 import React, { FC, useCallback, useState } from 'react';
-import { Redirect } from 'react-router';
+import { Redirect, Route, Switch, useParams } from 'react-router';
 import useSWR from 'swr';
-import { AddButton, Channels, Chats, Header, LogOutButton, MenuScroll, ProfileImg, ProfileModal, RightMenu, WorkspaceButton, WorkspaceName, Workspaces, WorkspaceWrapper } from './styles';
+import { AddButton, Channels, Chats, Header, LogOutButton, MenuScroll, ProfileImg, ProfileModal, RightMenu, WorkspaceButton, WorkspaceModal, WorkspaceName, Workspaces, WorkspaceWrapper } from './styles';
 import gravatar from 'gravatar';
 import Menu from '@components/Menu';
 import { Link } from 'react-router-dom';
-import { IUser } from 'typings/db';
+import { IChannel, IUser } from 'typings/db';
 import { Button, Input, Label } from '@pages/SignUp/style';
 import useInput from '@hooks/useInput';
 import Modal from '@components/Modal';
 import { toast } from 'react-toastify';
+import CreateChannelModal from '@components/CreateChannelModal';
+import Channel from '@pages/Channel';
+import DirectMessage from '@pages/DirectMessage';
+import InviteWorkspaceModal from '@components/InviteWorkspaceModal';
+import InviteChannelModal from '@components/InviteChannelModal';
 
-const Workspace: FC = ({children}) => {
-  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
+const Workspace: FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
+  const [showInviteWorkspaceModal, setShowInviteWorkspaceModal] = useState(false);
+  const [showInviteChannelModal, setShowInviteChannelModal] = useState(false);
+  const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
+  const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
   const [newWorkspace, onChangeNewWorkspace, setNewWorkspace] = useInput('');
   const [newUrl, onChangeNewUrl, setNewUrl] = useInput('');
-
+  const { workspace, channel } = useParams<{ workspace: string, channel: string }>();
+  
   const {data, error, mutate} = useSWR<IUser | false>('http://localhost:3095/api/users', fetcher, {   // <IUser | false> 라고 작성하는 이유는 로그인 안되어있으면 false가 나올수도 있기 때문이다.
     dedupingInterval: 1000,     // 1초 내에 또 요청이 오면 캐시에 저장된 데이터를 사용한다.
   }); 
-  
+  const { data: channelData, mutate: mutateChannel } = useSWR<IChannel[]>(data ? `http://localhost:3095/api/workspaces/${workspace}/channels` : null, fetcher);
+
   const onLogout = useCallback(() => {
     axios.post('http://localhost:3095/api/users/logout', null, {
       // 백엔드와 프론트가 서로 쿠키를 교환하기 위해 아래의 설정을 해주어여 한다.
@@ -73,6 +84,21 @@ const Workspace: FC = ({children}) => {
 
   const onCloseModal = useCallback(() => {
     setShowCreateWorkspaceModal(false);
+    setShowCreateChannelModal(false);
+    setShowInviteWorkspaceModal(false);
+    setShowInviteChannelModal(false);
+  }, []);
+
+  const toggleWorkspaceModal = useCallback(() => {
+    setShowWorkspaceModal((prev) => !prev);
+  }, []);
+
+  const onClickAddChannel = useCallback(() => {
+    setShowCreateChannelModal(true);
+  }, []);
+
+  const onClickInviteWorkspace = useCallback(() => {
+
   }, []);
 
   if (!data) {
@@ -112,11 +138,28 @@ const Workspace: FC = ({children}) => {
           <AddButton onClick={onClickCreateWorkspace}>+</AddButton>
         </Workspaces>
         <Channels>
-          <WorkspaceName>Sleact</WorkspaceName>
-          <MenuScroll>menu scroll</MenuScroll>
+          <WorkspaceName onClick={toggleWorkspaceModal}>
+            Sleact
+            {/* {userData?.Workspaces.find((v) => v.url === workspace)} */}
+          </WorkspaceName>
+          <MenuScroll>
+            <Menu show={showWorkspaceModal} onCloseModal={toggleWorkspaceModal} style={{ top: 95, left: 80 }}>
+              <WorkspaceModal>
+                <h2>Sleact</h2>
+                <button onClick={onClickInviteWorkspace}>워크스페이스에 사용자 초대</button>
+                <button onClick={onClickAddChannel}>채널 만들기</button>
+                <button onClick={onLogout}>로그아웃</button>
+              </WorkspaceModal>
+            </Menu>
+            {channelData?.map((v) => (<div>{v.name}</div>))}
+          </MenuScroll>
         </Channels>
         <Chats>
-          {children}
+          {/* Workspace 자체에서 주소 판단 */}
+          <Switch>
+            <Route path="/workspace/:workspace/channel/:channel" component={Channel} />
+            <Route path="/workspace/:workspace/dm/:id" component={DirectMessage} />
+          </Switch>
         </Chats>
       </WorkspaceWrapper>
       {/* Input은 컴포넌트로 나누는 것이 좋다. 값을 입력할 때마다 Input이 state를 변경해서 리렌더링하기 때문 */}
@@ -133,6 +176,21 @@ const Workspace: FC = ({children}) => {
           <Button type="submit">생성하기</Button>
         </form>
       </Modal>
+      <CreateChannelModal 
+        show={showCreateChannelModal} 
+        onCloseModal={onCloseModal} 
+        setShowCreateChannelModal={setShowCreateChannelModal}
+      />
+      <InviteWorkspaceModal
+        show={showInviteWorkspaceModal}
+        onCloseModal={onCloseModal}
+        setShowInviteWorkspaceModal={setShowInviteWorkspaceModal}
+      />
+      <InviteChannelModal
+        show={showInviteChannelModal}
+        onCloseModal={onCloseModal}
+        setShowInviteChannelModal={setShowInviteChannelModal}
+      />
     </div>
   )
 }
