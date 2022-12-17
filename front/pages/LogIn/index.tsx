@@ -33,7 +33,8 @@ const LogIn = () => {
           // 로그인에 성공하면 swr을 호출해서 data를 true로 변경한다.
           // mutate는 서버에 요청하기 전에 데이터를 바꿔버리고 요청을 나중에 보낸다. 유저의 사용성이 좋아진다. (optimistic ui)
           // 먼저 성공한다고 가정하고 데이터를 바꾼 뒤 점검하겠다.... 점검을 했는데 성공하면 넘어가고, 실패했으면 조치를 취한다.
-          mutate(response.data, false);
+          // mutate(response.data, false);
+          mutate();
         })
         .catch((error) => {
           setLogInError(error.response?.data?.statusCode === 401);
